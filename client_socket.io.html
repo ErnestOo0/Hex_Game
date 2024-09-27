@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+      <script src="/socket.io/socket.io.js"></script>
+      <script src="/file/client.js"></script>
+      <script src="/file/hexagones_squelette.js"></script>
+      <script src="https://d3js.org/d3.v7.min.js"></script>
+      <link href="/file/socket.css" rel="stylesheet" type="text/css" />
+
+  
+   </head>
+   <body> 
+      <h1>TEST de socket.io</h1>
+      
+      <div id = "singn">
+         <input type = "text" id = "nom"></input>
+         <button type = "button" id = "connexion" onclick="entrerPartie()">rejoindre</button>
+         <button type = "button" id = "deconnexion" onclick="quitterPartie()">quitter</button>
+      </div>
+      
+      <table>
+         <tr>
+            <td id = "players">
+            
+                  Utilisateurs : 
+                  <ol id = "playersList">
+                  </ol>
+            
+            </td>
+            <td id = "messagerie">
+               
+                  <ul id ="listMessages">
+                        
+                  </ul>
+               
+                  <div id ="redaction">
+                     <input type = "text" id = "message"></input>
+                     <button type = "text" id = "envoie" onclick="envoieMessage()">envoyer</button>
+                  </div>
+            
+            </td>
+            <td id = "Tatablier">
+               <div id = "tablier"></div>
+            </td>
+         </tr>
+      </table>
+   </body>
+</html>

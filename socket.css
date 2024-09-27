@@ -1,0 +1,40 @@
+
+table{
+    table-layout: fixed;
+    width: 40%;
+    height: 50%;
+}
+
+td{
+    border: solid 2px;
+}
+
+.messagerie{
+    width: 75%;
+}
+
+.players{
+    width: 25%;
+    position: relative;
+    vertical-align: top;
+    text-align: left;
+}
+
+.playersLlist{
+    position: relative;
+    vertical-align: top;
+}
+
+.mesMes{
+    text-align: right;
+}
+
+.autreMes{
+    text-align: left;
+}
+
+.mesInfo{
+    text-align: center;
+    font-style: italic;
+}
+

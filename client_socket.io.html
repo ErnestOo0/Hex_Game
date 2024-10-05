@@ -10,7 +10,7 @@
   
    </head>
    <body> 
-      <h1>TEST de socket.io</h1>
+      <h1>Jeu de Hex buy Ernest N</h1>
       
       <div id = "singn">
          <input type = "text" id = "nom"></input>
@@ -24,25 +24,39 @@
             
                   Utilisateurs : 
                   <ol id = "playersList">
+                     <!--Liste des joueurs connectés-->
                   </ol>
             
             </td>
             <td id = "messagerie">
                
                   <ul id ="listMessages">
-                        
+                        <!--liste des messages-->
                   </ul>
                
                   <div id ="redaction">
                      <input type = "text" id = "message"></input>
-                     <button type = "text" id = "envoie" onclick="envoieMessage()">envoyer</button>
+                     <button type = "button" id = "envoie" onclick="envoieMessage()">envoyer</button>
                   </div>
             
             </td>
-            <td id = "Tatablier">
-               <div id = "tablier"></div>
-            </td>
+            <!-- <td id = "Tatablier">
+            </td> -->
          </tr>
       </table>
+      <button type = "button" id = "rejoindre" onclick="accesJeu()">Rejoindre la partie</button>
+      <ol id = "listeJHex">
+         <!--liste des joueurs connectés à la partie de Hex-->
+      </ol> 
+
+
+      <div id = "tablier"></div>
+      <div id ="spectateurMode">
+         <button type = "button" id ="specPrec" onclick="actionPrec()"><</button>
+         <button type = "button" id ="specSuiv" onclick="actionSuiv()">></button>
+         <button type = "button" id ="specDirect" onclick="actionSuiv()">direct</button>
+      </div>
+
+
    </body>
 </html>

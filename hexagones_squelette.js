@@ -16,15 +16,16 @@
          let d = "";
          let x, y;
          rayon = rayon*agr
+         rayDist = rayon-distance;
          
          for (h in hexagone) {
             if(agr == 1){
-               x = (hexagone[h][0]+(rayon-distance)*(2+2*colonne))+((rayon/agr) - distance)*ligne;//on ajoute ligne*(le rayon - la distance) pour decaller les hexa, enlever la distance qu rayon permet de bien aligner les hexa
+               x = hexagone[h][0]+(rayon-distance)*(2+2*colonne)+((rayon) - distance)*ligne;//on ajoute ligne*(le rayon - la distance) pour decaller les hexa, enlever la distance qu rayon permet de bien aligner les hexa
                y = distance*2 + hexagone[h][1]+(rayon-distance*2)*(1+2.05*ligne);
-            }else{//si il y a un agendissement ont ne les plasse pas pareil
-               
-               x = hexagone[h][0]+((rayon/agr)-distance)*(2+2*colonne) +(rayon - distance)*ligne ;//on ajoute ligne*(le rayon - la distance) pour decaller les hexa, enlever la distance qu rayon permet de bien aligner les hexa
-               y = distance*2 + hexagone[h][1]+((rayon/agr)-distance*2)*(1+2.05*ligne);
+            }else{//si il y a un agendissement ont ne les place pas pareil
+
+               x = hexagone[h][0]+(rayDist/agr)*(2+2*colonne)+(rayDist/agr)*ligne;//on ajoute ligne*(le rayon - la distance) pour decaller les hexa, enlever la distance qu rayon permet de bien aligner les hexa
+               y = distance*2 + hexagone[h][1]+((rayon-distance*2)/agr)*(1+2.05*ligne);
             }
             
             if(h == 0){
@@ -59,27 +60,25 @@
                .style("stroke", "black")
                .style("fill", "white")
                .style("stroke-width","2")
-               .style("z-index","1")
+               .attr("z-index","1")//permet de gérer les plans, plus z index petit = moins devant
                .attr("id", "h"+(ligne*nbColonnes+colonne)) // car un id doit commencer par une lettre
-               //les évement ne se font que sur les bordures et si on va trop vite elles peuvent ne pas etre vue
                .on("mouseover", function(){
-                  //console.log("dessus : "+d3.select(this).attr('id'))
+               
                   console.log("entrée ",[id2Chif(d3.select(this).attr('id'))%nbColonnes, Math.floor(id2Chif(d3.select(this).attr('id'))/nbColonnes)]);
                
                   d3.select(this).attr("d", createPath(rayon, agrand, creeHexagone(rayon*agrand), calcDist(rayon*agrand), id2Chif(d3.select(this).attr('id'))%nbColonnes, Math.floor(id2Chif(d3.select(this).attr('id'))/nbColonnes)));
-                  console.log("avant : ",d3.select(this).style.zInndex);
+                  console.log("avant : ",d3.select(this).attr.zInndex);
                   
-                  d3.select(this).style.zInndex = "10";//on met au premier plan
-                  //d3.select(this).style.zoom = "200%";
-                  //zoom de css ne marche pas
-                  console.log("apres : ",d3.select(this).style.zInndex);
+                  d3.select(this).attr.zInndex = "999";//on met au premier plan
+                 
+                  console.log("apres : ",d3.select(this).attr.zInndex);
                })
                .on("mouseout",function(){//si rerentre ou entre dans nouvlle case ou alors mettre bordures en énorme
                   console.log("sortie ",[id2Chif(d3.select(this).attr('id'))%nbColonnes, Math.floor(id2Chif(d3.select(this).attr('id'))/nbColonnes)]);
                   
                   d3.select(this).attr("d", createPath(rayon, 1, creeHexagone(rayon), distance, id2Chif(d3.select(this).attr('id'))%nbColonnes, Math.floor(id2Chif(d3.select(this).attr('id'))/nbColonnes)));
-                  //d3.select(this).style.zoom = "50%";
-                  d3.select(this).style.zInndex = "auto";// on remet au plan initial
+              
+                  d3.select(this).attr.zInndex = "1";// on remet au plan initial
                })
                .on("click",function(){
                   let c = d3.select(this).attr('id');

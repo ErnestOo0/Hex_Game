@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr">
   <head>
+      <title>HEX GAME</title>
+      <link rel="icon" type="image/x-icon" href="/file/hexagone_favi.png">
       <script src="/socket.io/socket.io.js"></script>
       <script src="/file/client.js"></script>
       <script src="/file/hexagones_squelette.js"></script>
@@ -10,7 +12,7 @@
   
    </head>
    <body> 
-      <h1>Jeu de Hex buy Ernest N</h1>
+      <h1> The Hex Game</h1>
       
       <div id = "singn">
          <input type = "text" id = "nom"></input>
@@ -53,8 +55,9 @@
       <div id = "tablier"></div>
       <div id ="spectateurMode">
          <button type = "button" id ="specPrec" onclick="actionPrec()"><</button>
+         <div id = "infoTour"></div>
          <button type = "button" id ="specSuiv" onclick="actionSuiv()">></button>
-         <button type = "button" id ="specDirect" onclick="actionSuiv()">direct</button>
+         <button type = "button" id ="specDirect" onclick="goDirect()">direct</button>
       </div>
 
 

@@ -12,7 +12,7 @@ var nbJPartie = 0;//nombre de joueurs dans la partie d'Hex (<=2)
 var nbJPMax = 2
 var listeJPartie = [];//liste des joueurs dans la partie d'Hex
 var jeton;//détermine quel joueur peut jouer -> false : le joueur 0 et true le joueur 1
-var permierJoueur = false;
+var permierJoueur = 0;//A MODIFIER, INUTILE DE PASSER PAR UN >BOOLEEN -> FONCTION CHANGER JOUEUR
 var playersCases = [[],[]] // tableau qui contient les cases du joueur 0 et les cases su joueur 1
 var listCouleurs = ["red","blue"]// couleur du joueur 0 et du joueur 1
 var nbLignes = 11;//modifier pour pas écrit dans client et serveur
@@ -21,14 +21,20 @@ var nbColonnes = 11 ;
 function choix1erJ(){
     let res = Math.random();
     if(res<0.5){ 
-        jeton = false
-        permierJoueur = jeton;
-        return 0;
+        jeton = 0
     }
-    jeton = true;
+    jeton = 1;
     permierJoueur = jeton;
-    return 1;
+    return jeton;
 }
+
+// function jeton2int(j){ A SUPPRIMER
+//     if(j  = false){
+//         return 0;
+//     }else{
+//         return 1
+//     }
+// }
 
 function dejaSelect(num){
     for(let c of playersCases){
@@ -43,7 +49,7 @@ function bonJoueur(name,numC,numJ){
         if(dejaSelect(numC) == false){//et qu'il à clické sur une case vierge
             console.log("case h"+numC+" clické")
             playersCases[numJ].push(numC);//le joueur peut jouer
-            jeton = !jeton; //on change de jeton
+            jeton = changeJoueur(jeton); //on change de jeton
             console.log("jeton");
             return numJ;
         }else{
@@ -213,15 +219,17 @@ app.get('/file/:file', (request, response) => {
 io.on('connection', (socket) => {
     socket.on('test', data => {
         console.log("Message reçu du client :", data.message);
-        socket.emit('test', {'quiterepond': 'le serveur !','listJ' : listeJoueurs, 'listM' : listMes})
+        let actuelJP = -1;
+        if(nbJPartie == nbJPMax){//si la partie à commencé
+            actuelJP = jeton;//on renvoie le numéro du joueur qui doit jouer
+        }
+        socket.emit('test', {'quiterepond': 'le serveur !','listJ' : listeJoueurs, 'listM' : listMes,"listeCases": playersCases,"couleurs":listCouleurs,"listeJP": listeJPartie,"numActuelJP" : actuelJP})
         data.nbL = nbLignes;
         data.nbC = nbColonnes;
         //socket.emit('test', {'nbJoueurs': nbJoueurs,'listeJoueurs' : listeJoueurs})
     });
 
     socket.on('connectionS', data => {
-        console.log("demande reçu:", data);
-        socket.emit('connectionS', {'quiterepond': 'Demande de '+data+' prise en compte'})
         if(listeJoueurs.includes(data) == false){
             listeJoueurs.push(data);
             nbJoueurs += 1;
@@ -270,12 +278,8 @@ io.on('connection', (socket) => {
     socket.on("caseSelect",data =>{
         let numJP;
         console.log("le joueur ",data.nomJ," veut jouer sur la case : ",data.numC);
-        if(jeton){//Si le jeton vaut 1 c'est au joueur 1 de jouer, on vé rifie que c'est bien le cas
-            numJP = bonJoueur(data.nomJ,data.numC,1);
-        }else{
-            numJP = bonJoueur(data.nomJ,data.numC,0);
-        }
-        if(numJP != -1){
+        numJP = bonJoueur(data.nomJ,data.numC,jeton);//Si le jeton vaut 1 c'est au joueur 1 de jouer, on vé rifie que c'est bien le cas
+        if(numJP != -1){//si le joueur à bien pu jouer
             
             console.log("cases jouées : ",playersCases )
             io.emit("newCaseSelect",{"casesS" :playersCases,"couleurs" : listCouleurs,"numJP" : changeJoueur(numJP)});
@@ -296,38 +300,31 @@ io.on('connection', (socket) => {
         }
     })
 
-    function joueurPrecedant(){
-        if(jeton = 0){
-            return nbJPMax -1;
-        }else{
-            return jeton -1;
-        }
-    }
-
-    function retrouver1erJ(){
-        let round = playersCases.length;
-
-    }
 
     socket.on("specMode",data =>{
-        let actualRound = playersCases.length;
-        console.log("roud à regarder: ",data.roudS)
+        let actualRound = 0;
+        for(let t of playersCases){
+            actualRound += t.length;
+        }
+        console.log("roud à regarder: ",data.roudS,"/",actualRound)
         let specTab = [[],[]];
         if(data.roudS<0){
-            socket.emit("specModeTab",{"specTab":specTab,"specRoud":specRoud,"couleurs":listCouleurs});
-        }else if(data.roudS<actualRound){
-            socket.emit("specModeTab",{"specTab":playersCases,"specRoud":specRoud,"couleurs":listCouleurs});
+            socket.emit("specModeTab",{"allCases":playersCases,"specTab":specTab,"specRoud":0,"couleurs":listCouleurs});
+        }else if(data.roudS>=actualRound){
+            socket.emit("specModeTab",{"allCases":playersCases,"specTab":playersCases,"specRoud":actualRound,"couleurs":listCouleurs});
         }else{
-            for(let c= 0;c<data.roudS-(nbJPMax-1);c++){//on s'arrete au tour d'avant
-                for(let i of playersCases){
-                    specTab.push(i[c]);
+            let c = 0;
+            while(c<Math.floor(data.roudS/2)){
+                for(let i in playersCases){
+                    specTab[i].push(playersCases[i][c]);
                 }
+                c++
             }
-            if(permierJoueur = true){
-                specTab.push(playersCases[data.roudS-1])
+            if(data.roudS%2 == 1){
+                specTab[permierJoueur].push(playersCases[permierJoueur][c])
             };
             console.log("spectateur retour : ",specTab)
-            socket.emit("specModeTab",{"specTab":specTab,"specRoud":data.roudS,"couleurs":listCouleurs});
+            socket.emit("specModeTab",{"allCases":playersCases,"specTab":specTab,"specRoud":data.roudS,"couleurs":listCouleurs});
         }
     })
 

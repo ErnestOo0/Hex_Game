@@ -9,6 +9,20 @@ var nbC = 11;
 var nbL = 11;
 var specRound = 0;
 tablier = [[],[]];
+backColor = "white";
+
+function Tab2TabLength(tab){
+   let res = 0;
+   for(let t of tab){
+      res += t.length;
+   }
+   return res;
+}
+
+function infoT(s,a){
+   document.getElementById("infoTour").innerHTML = "";
+   document.getElementById("infoTour").innerHTML += s + "/" + a;
+}
 
 function test() {
    console.log("Appel du serveur");
@@ -21,6 +35,12 @@ function ajoutList(id,tab){
     for(let j of tab){
         document.getElementById(id).innerHTML +="<li>"+j+"</li>";
     }
+};
+
+function makeListJHex(listJH){//crée la liste des joueurs dans la partie de Hex avec un id pNumérodeJoueurDansLaPartie
+   for(let j in listJH){
+      document.getElementById("listeJHex").innerHTML += "<li id = p"+j+">"+listJH[j]+"</li>";
+   }
 };
 
 function messagePrint(m,de){
@@ -54,7 +74,7 @@ function reiniParite(listeCases,listeNom){//quand la partie est finie on enleve 
    for(let caseJ of listeCases){
       for(let c of caseJ){//on colorie toutes les cases en blanc
     
-      document.getElementById("h"+c).style.fill = "white";
+      document.getElementById("h"+c).style.fill = backColor;
    }
    document.getElementById(listeNom).innerHTML = ""//on vide al liste des joueurs dans la partie
    }
@@ -130,26 +150,37 @@ function actionPrec(){
 }
 
 function actionSuiv(){
-   socket.emit("specMode",{"roudS":specRound -1});
+   socket.emit("specMode",{"roudS":specRound +1});
+}
+
+function goDirect(){
+   socket.emit("specMode",{"roudS":nbL*nbC+1});//on envoie le tour max, le nnompbre de cases +1
 }
 
 socket.on("specModeTab",data=>{
    specRound = data.specRoud;
-   colorierCases(data.specTab,data.listCouleurs);
+   colorierCases(data.allCases,[backColor,backColor]);//on colorie toutes les cases joués en blanc
+   colorierCases(data.specTab,data.couleurs);//on colorie seulement les cases voulus de la bonne couleure
+   infoT(specRound,Tab2TabLength(data.allCases))
 })
 
-socket.on('test', data => {
+socket.on('test', data => {//premiere réponse du serveur
    console.log('Réponse du serveur :');
    console.dir(data);
    for(let i of data.listM){
       messagePrint(i.message,i.nomJ);
    }
    ajoutList("playersList",data.listJ);
+   makeListJHex(data.listeJP);
+   if(data.numActuelJP >= 0){//si le numéro du joueur qui doit jouer est bonne
+      TourDeJouer(data.numActuelJP);
+   }
+   goDirect();
+
+
 });
 
 socket.on('connectionS', data => {//réponses du serveur à la demande NewJoueur
-   console.log('Réponse du serveur :');
-   console.dir(data);
    if(data.numJ!=null){
       numJoueur = data.numJ
       nomJoueur = data.nomJ
@@ -197,10 +228,9 @@ socket.on("AccesPartieValid",data =>{
 });
 
 socket.on("newJPartie",data => {
-   document.getElementById("listeJHex").innerHTML = "";//on vide la liste 
-   for(let j in data.listeJPartie){
-      document.getElementById("listeJHex").innerHTML += "<li id = p"+j+">"+data.listeJPartie[j]+"</li>";
-   }
+   document.getElementById("listeJHex").innerHTML = "";//on vide la liste
+   makeListJHex(data.listeJPartie);
+   
    if(data.newJPartie == nomJoueur){
       messagePrint("Vous avez rejoint la partie","");
    }else{
@@ -217,13 +247,13 @@ socket.on("DebutP",data =>{
    specRound = 0;  
 });
 
-
-
 socket.on("newCaseSelect",data =>{
    TourDeJouer(data.numJP);
-   colorierCases(data.casesS,data.couleurs)
-   specRound+=1
-
+   if(specRound == Tab2TabLength(data.casesS)-1){//si le spectateur n'est pas entrain de regarder dans le passé (-1 car on incrémente apres)
+      colorierCases(data.casesS,data.couleurs)
+      specRound+=1
+   }
+   infoT(specRound,Tab2TabLength(data.casesS))
 });
 
 

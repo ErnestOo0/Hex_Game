@@ -1,3 +1,5 @@
+Lien du [GIT](https://github.com/ErnestOo0/Hex_Game)
+
 # fonctionnalités implémentées :
   * Tout le monde peut se connecter pour chater mais seulement 2 joueurs peuvent se connecter à la partie de HEX
   * Cases grandissent au survol

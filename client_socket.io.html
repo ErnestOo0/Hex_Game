@@ -26,7 +26,7 @@
             
                   Utilisateurs : 
                   <ol id = "userList">
-                     <!--Liste des joueurs connectés-->
+                     <!--Liste des utilisteurs connectés-->
                   </ol>
             
             </td>
@@ -47,9 +47,10 @@
          </tr>
       </table>
       <button type = "button" id = "rejoindre" onclick="accesJeu()">Rejoindre la partie</button>
-      <ol id = "listeJHex">
+      <div id = "listeJHex">
          <!--liste des joueurs connectés à la partie de Hex-->
-      </ol> 
+         <!--ou d'un message d'attente-->
+      </div> 
 
 
       <div id = "tablier"></div>
@@ -58,6 +59,17 @@
          <div id = "infoTour"></div>
          <button type = "button" id ="specSuiv" onclick="actionSuiv()">></button>
          <button type = "button" id ="specDirect" onclick="goDirect()">direct</button>
+      </div>
+      <div id = "regles">
+         <h3>Jeu de Hex</h3>
+         <p>But du jeu : 
+            <ul>
+               <li>joueur rouge : relier les cotés droits et gauches</li>
+               <li>joueur bleu : relier les cotés hauts et bas</li>
+            </ul>
+         pour cela les joueurs posent des tules chacun leur tour.
+         Il est interdit de recouvrir une tuile deja posé</p>
+
       </div>
 
 

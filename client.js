@@ -36,10 +36,21 @@ function makeHTMLList(id,tab){
 };
 
 function makeListJHex(listJH){//crée la liste des joueurs dans la partie de Hex avec un id pNumérodeJoueurDansLaPartie
+   
+   let html = "<ol>";
    for(let j in listJH){
-      document.getElementById("listeJHex").innerHTML += "<li id = p"+j+">"+listJH[j]+"</li>";
+ 
+      html += "<li id = 'p"+j+"' style='color:"+couleursHex[j]+"'>"+listJH[j]+"</li>";
    }
+   html += "</ol>";
+   console.log("html liste joueurs =",html);
+   document.getElementById("listeJHex").innerHTML = html;
 };
+
+function afficheAttente(){
+
+   document.getElementById("listeJHex").innerHTML = "en attente de votre adversaire";
+}
 
 function messagePrint(m,de){
    if(de == ""){//il s'agit d'un message d'information
@@ -69,13 +80,15 @@ function colorierCases(tabCases,tabCouleurs){
 function reiniParite(listeCases,listeNom){//quand la partie est finie on enleve tous les joueurs
    numJPartie = -1;//les joueurs ne sont plus dans la partie  possiblité de faire un system de file d'attente
    console.log("réinitialistaion de la partie");
+   document.getElementById("rejoindre").disabled = false;//on remet le bouton pour rejoindre la partie
    for(let caseJ of listeCases){
       for(let c of caseJ){//on colorie toutes les cases en blanc
     
       document.getElementById("h"+c).style.fill = backColor;
    }
-   document.getElementById(listeNom).innerHTML = ""//on vide al liste des joueurs dans la partie
+   document.getElementById("listeJHex").innerHTML = ""//on vide al liste des joueurs dans la partie
    }
+   document.getElementById("rejoindre").disabled = false;//on remet le bouton pour rejoindre la partie
 }
 
 function entrerPartie() {
@@ -129,16 +142,21 @@ function selecteCase(cNum){//modifier pour afficher les noms de la bonne couleur
    
 };
 
-function TourDeJouer(num){//le joueur qui doit jouer est en rouge et les autres n'ont pas de couleur
+function TourDeJouer(num){//le joueur qui doit jouer a une petite etoile
    console.log("c'est au joueur n°",num);
    for(let i = 0;i<2;i++){
-      console.log(i == num);
-      if(i == num){
 
-         document.getElementById("p"+i).style.color = "red";
+      if(i == num){//on met une etoile devant le joueur qui doit jouer
+
+         document.getElementById("p"+i).innerHTML = "* "+document.getElementById("p"+i).innerHTML;
       }
       else{
-         document.getElementById("p"+i).style.color = "black";
+
+         if(document.getElementById("p"+i).innerHTML.substring(0,2)=="* "){//au premier tour il n'a pas d'etoile devant
+            
+            document.getElementById("p"+i).innerHTML = document.getElementById("p"+i).innerHTML.substring(2);//on enleve les 3 premiers caracteres
+         }
+         
       }
    }
    
@@ -166,13 +184,20 @@ socket.on("specModeTab",data=>{
 socket.on('init', data => {//premiere réponse du serveur
    console.log('Serveur :');
    console.dir(data);
+   couleursHex = data.couleurs
+
+   document.getElementById("rejoindre").disabled = false;//on met le bouton pour rejoindre la partie
+
+   makeHTMLList("userList",data.listJ);
+   
    for(let i of data.listM){
       messagePrint(i.message,i.nomU);
    }
-   makeHTMLList("userList",data.listJ);
-   makeHTMLList("listeJHex",data.listeJP);
-   if(data.numActuelJP >= 0){//si le numéro du joueur qui doit jouer est bonne
+
+   if(data.numActuelJP >= 0){//si le numéro du joueur qui doit jouer est bon, alors la partie à commencé
+      makeListJHex(data.listeJP)
       TourDeJouer(data.numActuelJP);
+      document.getElementById("rejoindre").disabled = true;//la partie à deja commencé, on ne peut pas la rejoindre
    }
 
    nbColones = data.nbC;
@@ -184,8 +209,9 @@ socket.on('init', data => {//premiere réponse du serveur
 });
 
 socket.on('connectionS', data => {//réponses du serveur à la demande NewJoueur
-   if(data.numU!=null){//modifier numJ par numU
+   if(data.numU!=null){
       numUser = data.numU
+      console.log("numreo de joueur",numUser)
       nomUser = data.nomU
 
       document.getElementById("connexion").disabled = true;
@@ -194,11 +220,9 @@ socket.on('connectionS', data => {//réponses du serveur à la demande NewJoueur
    
 });
 
-socket.on("newJoueur",data => {
-    console.log(data.nomU + " a rejoint la partie");
-    console.log("liste des joueurs :");
-    console.log(data.listJ);
-    makeHTMLList("userList",data.listJ);
+socket.on("newJoueur",data => {// un novel utilisateur vient de se connecter
+  
+    makeHTMLList("userList",data.listJ);//on actualise la liste des joueurs
     messagePrint(data.nomU+" vient de se connecter","");
 });
 
@@ -229,14 +253,15 @@ socket.on('newMes',data => {
    messagePrint(data.message,data.nomU)
 });
 
-socket.on("AccesPartieValid",data =>{
+socket.on("AccesPartieValid",data =>{//on est connecté à la partie
+   document.getElementById("rejoindre").disabled = true;// on désactive le bouton pour rejoindre la partie
    console.log("vous avez rejoint la partie");
    numJPartie = data.numP;
+   document.getElementById("listeJHex").innerHTML = "";//on vide la liste
+   afficheAttente()//indique qu'on atttend un autre joueur
 });
 
 socket.on("newJPartie",data => {
-   document.getElementById("listeJHex").innerHTML = "";//on vide la liste
-   makeListJHex(data.listeJPartie);
    
    if(data.newJPartie == nomUser){
       messagePrint("Vous avez rejoint la partie","");
@@ -245,19 +270,24 @@ socket.on("newJPartie",data => {
    }
 });
 
-socket.on("AccesPartieRefus",function(){
+socket.on("AccesPartieRefus",function(){//le joueur ne peut pas accéder à la partie car elle est pleine
    messagePrint("La partie est pleine","");
 });
 
 socket.on("DebutP",data =>{
-   TourDeJouer(data.numJ1);
-   specRound = 0;  
+   
+   console.log("debut de la partie")
+   makeListJHex(data.listeJPartie);
+
+   TourDeJouer(data.numPremierJ);
+   specRound = 0;
+   document.getElementById("rejoindre").disabled = true;//si la partie est pleine, personne ne peut rejoindre
 });
 
 socket.on("newCaseSelect",data =>{
    TourDeJouer(data.numJP);
    if(specRound == Tab2TabLength(data.casesS)-1){//si le spectateur n'est pas entrain de regarder dans le passé (-1 car on incrémente apres)
-      colorierCases(data.casesS,data.couleurs)
+      colorierCases(data.casesS,couleursHex)
       specRound+=1
    }
    infoT(specRound,Tab2TabLength(data.casesS))
@@ -267,7 +297,7 @@ socket.on("newCaseSelect",data =>{
 
 socket.on("victoire",data =>{
    
-   reiniParite(data.cases,"listeJHex");
+   reiniParite(data.cases);
    
    if(data.nomV == nomUser){
       messagePrint("Vous avez gagné la partie ","")
@@ -277,6 +307,11 @@ socket.on("victoire",data =>{
       }
       messagePrint(data.nomV+" a gagné la partie la partie","")
    }
+});
+
+socket.on("arretGame",data =>{//la partie est arreté car un  joueur à quitté
+   reiniParite(data.cases);
+   messagePrint("la partie est arrêté","");
 });
 
 window.addEventListener('load', () => { 

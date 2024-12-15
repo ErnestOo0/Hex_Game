@@ -28,14 +28,6 @@ function choix1erJ(){
     return jeton;
 }
 
-// function jeton2int(j){ A SUPPRIMER
-//     if(j  = false){
-//         return 0;
-//     }else{
-//         return 1
-//     }
-// }
-
 function dejaSelect(num){
     for(let c of playersCases){
         if(c.includes(num)){ return true};
@@ -43,15 +35,15 @@ function dejaSelect(num){
     return false;
 }
 
-function bonJoueur(name,numC,numJ){
-    if(name == listeJPartie[numJ]){// si c'est au joueur 1 de jouer
+function bonJoueur(name,numC,numU){
+    if(name == listeJPartie[numU]){// si c'est au joueur 1 de jouer
         
         if(dejaSelect(numC) == false){//et qu'il à clické sur une case vierge
             console.log("case h"+numC+" clické")
-            playersCases[numJ].push(numC);//le joueur peut jouer
+            playersCases[numU].push(numC);//le joueur peut jouer
             jeton = changeJoueur(jeton); //on change de jeton
             console.log("jeton");
-            return numJ;
+            return numU;
         }else{
             console.log("la case est déja occupé");
         }   
@@ -88,6 +80,7 @@ function coteB(c){
     };
     return false;
 };
+
 function testCote(){
     let cg = [];
     let ch = [];
@@ -105,7 +98,6 @@ function testCote(){
     console.log("droite : ", cd);
     console.log("bas : ", cb);
 }
-
 
 function voisins(c){//renvoie la liste des voisins
     let v = [];
@@ -135,13 +127,13 @@ function voisins(c){//renvoie la liste des voisins
 }
 
 
-function verifWin(numJ){//utiliser call back 
+function verifWin(numU){//utiliser call back 
     let aRegard = [];
     let DeJaV = []
     let voisinsL =  [];
-    console.log("numJ dans verifWin : ",numJ);
-    if(numJ == 0){//le joueur 0 gauche et droit
-        for(let i of playersCases[numJ]){
+    console.log("numU dans verifWin : ",numU);
+    if(numU == 0){//le joueur 0 gauche et droit
+        for(let i of playersCases[numU]){
             if(coteG(i)){
                 aRegard.push(i);
             };
@@ -153,7 +145,7 @@ function verifWin(numJ){//utiliser call back
             voisinsL = voisins(c);
             console.log("voisins ",voisinsL);
             for(let v of voisinsL){
-                if(playersCases[numJ].includes(v) && DeJaV.includes(v) == false){//si elle à été cochée et qu'on n" l'a pas encore vue
+                if(playersCases[numU].includes(v) && DeJaV.includes(v) == false){//si elle à été cochée et qu'on n" l'a pas encore vue
                     if(coteD(v)){//si il est de l'autre coté
                         return true;
                     }
@@ -162,7 +154,7 @@ function verifWin(numJ){//utiliser call back
             }
         }
     }else{//le joueur 1 hauts et bas
-        for(let i of playersCases[numJ]){
+        for(let i of playersCases[numU]){
             if(coteH(i)){
                 aRegard.push(i);
             };
@@ -174,7 +166,7 @@ function verifWin(numJ){//utiliser call back
             DeJaV.push(c);
             voisinsL = voisins(c);
             for(let v of voisinsL){
-                if(playersCases[numJ].includes(v) && DeJaV.includes(v) == false){//si elle à été coché
+                if(playersCases[numU].includes(v) && DeJaV.includes(v) == false){//si elle à été coché
                     if(coteB(v)){//si il est de l'autre coté
                         return true;
                     }
@@ -217,15 +209,15 @@ app.get('/file/:file', (request, response) => {
 });
 
 io.on('connection', (socket) => {
-    socket.on('test', data => {
-        console.log("Message reçu du client :", data.message);
+    socket.on('arrive', data => {
+        console.log("Un nouvel utilisateur viens de se connecter");
         let actuelJP = -1;
         if(nbJPartie == nbJPMax){//si la partie à commencé
             actuelJP = jeton;//on renvoie le numéro du joueur qui doit jouer
         }
-        socket.emit('test', {'quiterepond': 'le serveur !','listJ' : listeJoueurs, 'listM' : listMes,"listeCases": playersCases,"couleurs":listCouleurs,"listeJP": listeJPartie,"numActuelJP" : actuelJP})
-        data.nbL = nbLignes;
-        data.nbC = nbColonnes;
+        socket.emit('init', {'listJ' : listeJoueurs, 'listM' : listMes,"listeCases": playersCases,"couleurs":listCouleurs,"listeJP": listeJPartie,"numActuelJP" : actuelJP,"nbL":nbLignes,"nbC":nbColonnes})
+        //data.nbL = nbLignes;
+        //data.nbC = nbColonnes;
         //socket.emit('test', {'nbJoueurs': nbJoueurs,'listeJoueurs' : listeJoueurs})
     });
 
@@ -233,36 +225,38 @@ io.on('connection', (socket) => {
         if(listeJoueurs.includes(data) == false){
             listeJoueurs.push(data);
             nbJoueurs += 1;
-            socket.emit('connectionS', {'nomJ': data,'numJ':nbJoueurs});
-            io.emit("newJoueur", {'nomJ': data,'listJ' : listeJoueurs})
+            socket.emit('connectionS', {'nomU': data,'numU':nbJoueurs-1});
+            io.emit("newJoueur", {'nomU': data,'listJ' : listeJoueurs})
         }else{
             socket.emit('connectionS', {'quiterepond': 'Demande de '+data+' refusé, le joueur est déja dans la partie'});
         }
     });
 
-    socket.on('quitJoueur', data => {
+    socket.on('quit', data => {//il faudrait penser à mettre les memes indices entre le serveur et le client
         console.log("Message reçu du client :", data);
-        socket.emit('quitJoueur', {'quiterepond': 'le joueur n°'+data.numJ+' veut quitter la partie'})
+        
         console.log(listeJoueurs);
-        listeJoueurs.splice(data.numJ-1,1);
+        nomUQuit = listeJoueurs[data.numU];
+        listeJoueurs.splice(data.numU,1);
         nbJoueurs -= 1;
         console.log("liste des joueurs :");
         console.log(listeJoueurs);
-        socket.broadcast.emit('autrejoueurQuit',{"nomJ": data.nomJ,"numJ" :data.numJ,"listJ": listeJoueurs})//modifie le numéro des autrs joueurs
+        io.emit('userQuit', {"nomU": nomUQuit,"listJ": listeJoueurs,"numU" :data.numU})
+        //socket.broadcast.emit('otherUserQuit',{})//modifie le numéro des autrs joueurs
     });
 
     socket.on('envMes',data => {
-        listMes.push({'nomJ' : data.nomJ,"message" : data.message});
-        io.emit('newMes',{'nomJ' : data.nomJ,"message" : data.message});
+        listMes.push({'nomU' : data.nomU,"message" : data.message});
+        io.emit('newMes',{'nomU' : data.nomU,"message" : data.message});
     });
 
     socket.on("accesJ",data =>{
         if(nbJPartie < nbJPMax){//on vérifie que la partie ne soit pas pleine
             nbJPartie += 1;
-            listeJPartie.push(data.nomJ);
+            listeJPartie.push(data.nomU);
             socket.emit('AccesPartieValid',{"numP":nbJPartie-1});
             
-            io.emit('newJPartie',{"listeJPartie":listeJPartie,"newJPartie":data.nomJ});
+            io.emit('newJPartie',{"listeJPartie":listeJPartie,"newJPartie":data.nomU});
             console.log("joueurs dans la partie de Hex : ", listeJPartie);
             if(nbJPartie == nbJPMax){//la partie est pleine 
                 console.log("partie pleine");
@@ -277,8 +271,8 @@ io.on('connection', (socket) => {
 
     socket.on("caseSelect",data =>{
         let numJP;
-        console.log("le joueur ",data.nomJ," veut jouer sur la case : ",data.numC);
-        numJP = bonJoueur(data.nomJ,data.numC,jeton);//Si le jeton vaut 1 c'est au joueur 1 de jouer, on vé rifie que c'est bien le cas
+        console.log("le joueur ",data.nomU," veut jouer sur la case : ",data.numC);
+        numJP = bonJoueur(data.nomU,data.numC,jeton);//Si le jeton vaut 1 c'est au joueur 1 de jouer, on vé rifie que c'est bien le cas
         if(numJP != -1){//si le joueur à bien pu jouer
             
             console.log("cases jouées : ",playersCases )
@@ -328,4 +322,7 @@ io.on('connection', (socket) => {
         }
     })
 
+    socket.on("leave",data =>{
+        console.log(data);
+    })
 });

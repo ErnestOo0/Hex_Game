@@ -60,29 +60,23 @@
                .style("stroke", "black")
                .style("fill", "white")
                .style("stroke-width","2")
-               .attr("z-index","1")//permet de gérer les plans, plus z index petit = moins devant
                .attr("id", "h"+(ligne*nbColonnes+colonne)) // car un id doit commencer par une lettre
-               .on("mouseover", function(){
-               
-                  console.log("entrée ",[id2Chif(d3.select(this).attr('id'))%nbColonnes, Math.floor(id2Chif(d3.select(this).attr('id'))/nbColonnes)]);
+               .on("mouseover", function(){//on agandis en redessinant les hexagones
+               //pour mettre au premier plan -> réorganiser les cases avec order (trop compliqué)
+                  //console.log("entrée ",[id2Chif(d3.select(this).attr('id'))%nbColonnes, Math.floor(id2Chif(d3.select(this).attr('id'))/nbColonnes)]);
                
                   d3.select(this).attr("d", createPath(rayon, agrand, creeHexagone(rayon*agrand), calcDist(rayon*agrand), id2Chif(d3.select(this).attr('id'))%nbColonnes, Math.floor(id2Chif(d3.select(this).attr('id'))/nbColonnes)));
-                  console.log("avant : ",d3.select(this).attr.zInndex);
-                  
-                  d3.select(this).attr.zInndex = "999";//on met au premier plan
-                 
-                  console.log("apres : ",d3.select(this).attr.zInndex);
+            
                })
-               .on("mouseout",function(){//si rerentre ou entre dans nouvlle case ou alors mettre bordures en énorme
-                  console.log("sortie ",[id2Chif(d3.select(this).attr('id'))%nbColonnes, Math.floor(id2Chif(d3.select(this).attr('id'))/nbColonnes)]);
+               .on("mouseout",function(){//on rement à la tallie normal
+                  //console.log("sortie ",[id2Chif(d3.select(this).attr('id'))%nbColonnes, Math.floor(id2Chif(d3.select(this).attr('id'))/nbColonnes)]);
                   
                   d3.select(this).attr("d", createPath(rayon, 1, creeHexagone(rayon), distance, id2Chif(d3.select(this).attr('id'))%nbColonnes, Math.floor(id2Chif(d3.select(this).attr('id'))/nbColonnes)));
-              
-                  d3.select(this).attr.zInndex = "1";// on remet au plan initial
+
                })
                .on("click",function(){
                   let c = d3.select(this).attr('id');
-                  console.log("clické : "+c);
+                  //console.log("clické : "+c);
                   selecteCase(c);
                });
          }

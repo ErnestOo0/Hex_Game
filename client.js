@@ -1,12 +1,10 @@
-
-
-var numJoueur;
-var nomJoueur;
-var connected = false;
+var numUser;
+var nomUser;
 var socket = io();
 var numJPartie = -1;
-var nbC = 11;
-var nbL = 11;
+var nbColones;
+var nbLignes;
+var rayonHex = 25
 var specRound = 0;
 tablier = [[],[]];
 backColor = "white";
@@ -19,18 +17,18 @@ function Tab2TabLength(tab){
    return res;
 }
 
-function infoT(s,a){
+function infoT(s,a){//pour le mode spectateur
    document.getElementById("infoTour").innerHTML = "";
    document.getElementById("infoTour").innerHTML += s + "/" + a;
 }
 
 function test() {
-   console.log("Appel du serveur");
-   socket.emit('test', {"message":"Ô serveur je t'envoie ce message","nbL" : nbL,"nbC":nbC});
+   console.log("Premier échange avec le serveur");
+   socket.emit('arrive');
    
 };
 
-function ajoutList(id,tab){
+function makeHTMLList(id,tab){
     document.getElementById(id).innerHTML = ""
     for(let j of tab){
         document.getElementById(id).innerHTML +="<li>"+j+"</li>";
@@ -48,7 +46,7 @@ function messagePrint(m,de){
 
       document.getElementById("listMessages").innerHTML +="<li class = 'mesInfo'>"+m+"</li>";
    
-   }else if(de == nomJoueur){//si c'est l'utilisateur qui a envoyé le message
+   }else if(de == nomUser){//si c'est l'utilisateur qui a envoyé le message
       
       document.getElementById("listMessages").innerHTML +="<li class = 'mesMes'>"+m+"</li>"; 
    
@@ -91,20 +89,20 @@ function entrerPartie() {
    
 
 function quitterPartie(){
-   socket.emit('quitJoueur', {"numJ": numJoueur, "nomJ": nomJoueur});
+   socket.emit('quit', {"numU": numUser});//modifier numJ par numU
 }
 
 function envoieMessage(){
-   if(nomJoueur != undefined){
-      socket.emit('envMes',{"nomJ" : nomJoueur, "message" : message.value});
+   if(nomUser != undefined){
+      socket.emit('envMes',{"nomU" : nomUser, "message" : message.value});
    }
    
 }
 
 function accesJeu(){//si le bouton rejoindre est pressé, on demande au serveur si on peut rejoindre la partie
-   if(nomJoueur != undefined){
-      socket.emit("accesJ",{"numJ": numJoueur, "nomJ": nomJoueur});
-      console.log(nomJoueur, " veut rejoindre la partie");
+   if(nomUser != undefined){
+      socket.emit("accesJ",{"numU": numUser, "nomU": nomUser});
+      console.log(nomUser, " veut rejoindre la partie");
    }
    
 }
@@ -119,12 +117,12 @@ function id2Chif(id){// prend un l'id d'uen case de la forme h+nombre et en renv
    return Number(c);
 }
 
-function selecteCase(cNum){
+function selecteCase(cNum){//modifier pour afficher les noms de la bonne couleur et mettre unenetoile à coté du joueur qui dois jouer
    if(numJPartie < 0){
       messagePrint("Vous n'etes pas dans la partie","");
    }else{
       let c = id2Chif(cNum);
-      socket.emit("caseSelect",{"numC":c,"nomJ":nomJoueur});
+      socket.emit("caseSelect",{"numC":c,"nomU":nomUser});
       
       console.log("numero ",c);
    }
@@ -136,6 +134,7 @@ function TourDeJouer(num){//le joueur qui doit jouer est en rouge et les autres 
    for(let i = 0;i<2;i++){
       console.log(i == num);
       if(i == num){
+
          document.getElementById("p"+i).style.color = "red";
       }
       else{
@@ -154,7 +153,7 @@ function actionSuiv(){
 }
 
 function goDirect(){
-   socket.emit("specMode",{"roudS":nbL*nbC+1});//on envoie le tour max, le nnompbre de cases +1
+   socket.emit("specMode",{"roudS":nbLignes*nbColones+1});//on envoie le tour max, le nnompbre de cases +1
 }
 
 socket.on("specModeTab",data=>{
@@ -164,27 +163,30 @@ socket.on("specModeTab",data=>{
    infoT(specRound,Tab2TabLength(data.allCases))
 })
 
-socket.on('test', data => {//premiere réponse du serveur
-   console.log('Réponse du serveur :');
+socket.on('init', data => {//premiere réponse du serveur
+   console.log('Serveur :');
    console.dir(data);
    for(let i of data.listM){
-      messagePrint(i.message,i.nomJ);
+      messagePrint(i.message,i.nomU);
    }
-   ajoutList("playersList",data.listJ);
-   makeListJHex(data.listeJP);
+   makeHTMLList("userList",data.listJ);
+   makeHTMLList("listeJHex",data.listeJP);
    if(data.numActuelJP >= 0){//si le numéro du joueur qui doit jouer est bonne
       TourDeJouer(data.numActuelJP);
    }
+
+   nbColones = data.nbC;
+   nbLignes = data.nbL
+   
+   genereDamier(rayonHex, nbLignes, nbColones);
    goDirect();
-
-
+   //console.log(nbColones)
 });
 
 socket.on('connectionS', data => {//réponses du serveur à la demande NewJoueur
-   if(data.numJ!=null){
-      numJoueur = data.numJ
-      nomJoueur = data.nomJ
-      connected = true;
+   if(data.numU!=null){//modifier numJ par numU
+      numUser = data.numU
+      nomUser = data.nomU
 
       document.getElementById("connexion").disabled = true;
       document.getElementById("deconnexion").disabled = false;
@@ -193,33 +195,38 @@ socket.on('connectionS', data => {//réponses du serveur à la demande NewJoueur
 });
 
 socket.on("newJoueur",data => {
-    console.log(data.nomJ + " a rejoint la partie");
+    console.log(data.nomU + " a rejoint la partie");
     console.log("liste des joueurs :");
     console.log(data.listJ);
-    ajoutList("playersList",data.listJ);
-    messagePrint(data.nomJ+" vient de se connecter","");
+    makeHTMLList("userList",data.listJ);
+    messagePrint(data.nomU+" vient de se connecter","");
 });
 
-socket.on('quitJoueur', data => {
-   console.log('Réponse du serveur :');
+socket.on('userQuit', data => {
    console.dir(data);
-   connected = false
-   document.getElementById("connexion").disabled = false;
-   //document.getElementById("nom").style.display = "block";
-   document.getElementById("deconnexion").disabled = true;
-});
 
-socket.on('autrejoueurQuit', data => {//si un autre joueur quitte la partie on adapte le numéro des joueurs
-   if(data.numJ < numJoueur){
-      numJoueur -=1;
-      console.log("nouveau numéro ", numJoueur);
+   makeHTMLList("userList",data.listJ);
+   messagePrint(data.nomU+" s'est déconnecté","");
+   
+   if(data.numU == numUser){
+      
+      numUser = -1;
+      document.getElementById("connexion").disabled = false;
+      document.getElementById("deconnexion").disabled = true;
+   
+   }else {
+      
+      if(data.numU < numUser){
+         numUser -=1;
+         console.log("nouveau numéro ", numUser);
+      
+      }
    }
-   ajoutList("playersList",data.listJ);
-   messagePrint(data.nomJ+" s'est déconnecté","");
+   
 });
 
 socket.on('newMes',data => {
-   messagePrint(data.message,data.nomJ)
+   messagePrint(data.message,data.nomU)
 });
 
 socket.on("AccesPartieValid",data =>{
@@ -231,7 +238,7 @@ socket.on("newJPartie",data => {
    document.getElementById("listeJHex").innerHTML = "";//on vide la liste
    makeListJHex(data.listeJPartie);
    
-   if(data.newJPartie == nomJoueur){
+   if(data.newJPartie == nomUser){
       messagePrint("Vous avez rejoint la partie","");
    }else{
       messagePrint(data.newJPartie+" a rejoint la partie","")
@@ -262,10 +269,10 @@ socket.on("victoire",data =>{
    
    reiniParite(data.cases,"listeJHex");
    
-   if(data.nomV == nomJoueur){
+   if(data.nomV == nomUser){
       messagePrint("Vous avez gagné la partie ","")
    }else{
-      if(data.nomD.includes(nomJoueur)){
+      if(data.nomD.includes(nomUser)){
          messagePrint("Vous avez perdu la partie ","")
       }
       messagePrint(data.nomV+" a gagné la partie la partie","")
@@ -274,6 +281,8 @@ socket.on("victoire",data =>{
 
 window.addEventListener('load', () => { 
    test();
-   genereDamier(25, nbL, nbC);
+   //genereDamier(rayonHex, nbL, nbC);
    document.getElementById("deconnexion").disabled = true;
 });
+
+window.addEventListener('beforeunload',quitterPartie);//losque l'on quitte la page, on est déconnnecté
